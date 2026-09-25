@@ -24,6 +24,47 @@ header {
   border-radius: 5px;
 }
 
+#auth-panel {
+  margin-top: 18px;
+}
+
+#login-form,
+#teacher-session {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#login-form input {
+  width: 180px;
+  padding: 9px;
+  border: 1px solid #c5cae9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#auth-panel button {
+  background-color: #43a047;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
+#auth-panel button:hover {
+  background-color: #2e7d32;
+}
+
+#teacher-name {
+  font-size: 14px;
+}
+
+#login-message {
+  margin: 10px auto 0;
+  max-width: 360px;
+  padding: 8px;
+}
+
 header h1 {
   margin-bottom: 10px;
 }
@@ -116,7 +157,7 @@ section h3 {
   color: #c62828;
   cursor: pointer;
   font-size: 14px;
-  padding: 2px 5px;
+  padding: 4px 7px;
   transition: all 0.2s;
   border-radius: 3px;
 }

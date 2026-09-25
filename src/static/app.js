@@ -3,6 +3,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginForm = document.getElementById("login-form");
+  const teacherSession = document.getElementById("teacher-session");
+  const teacherName = document.getElementById("teacher-name");
+  const logoutButton = document.getElementById("logout-button");
+  const loginMessage = document.getElementById("login-message");
+  let isTeacher = false;
+
+  function renderAuthState(username = "") {
+    loginForm.classList.toggle("hidden", isTeacher);
+    teacherSession.classList.toggle("hidden", !isTeacher);
+    signupForm.classList.toggle("hidden", !isTeacher);
+    teacherName.textContent = isTeacher ? `Signed in as ${username}` : "";
+  }
+
+  async function fetchAuthState() {
+    const response = await fetch("/auth/me");
+    if (!response.ok) {
+      isTeacher = false;
+      renderAuthState();
+      return;
+    }
+
+    const teacher = await response.json();
+    isTeacher = true;
+    renderAuthState(teacher.username);
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -10,8 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/activities");
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and stale activity options after a refresh.
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -30,7 +57,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${
+                        isTeacher
+                          ? `<button class="delete-btn" data-activity="${name}" data-email="${email}">Remove</button>`
+                          : ""
+                      }</li>`
                   )
                   .join("")}
               </ul>
@@ -66,6 +97,42 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error fetching activities:", error);
     }
   }
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    loginMessage.classList.add("hidden");
+
+    try {
+      const response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.detail || "Unable to log in");
+      }
+
+      isTeacher = true;
+      loginForm.reset();
+      renderAuthState(result.username);
+      fetchActivities();
+    } catch (error) {
+      loginMessage.textContent = error.message;
+      loginMessage.className = "error";
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    await fetch("/auth/logout", { method: "POST" });
+    isTeacher = false;
+    renderAuthState();
+    fetchActivities();
+  });
 
   // Handle unregister functionality
   async function handleUnregister(event) {
@@ -155,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize app
-  fetchActivities();
+  // Initialize public activity data and the current teacher session.
+  renderAuthState();
+  fetchAuthState().then(fetchActivities);
 });
